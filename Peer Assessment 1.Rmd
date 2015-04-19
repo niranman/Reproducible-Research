@@ -1,0 +1,83 @@
+---
+title: "Peer Assessment 1"
+author: "Niranjan Acharige"
+date: "Sunday, April 19, 2015"
+output: html_document
+---
+
+###Loading and preprocessing the data
+
+downloadDataset: Activity monitoring data [52K]
+[download](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip)
+
+Assume 'activity.zip' in the working directory
+
+```{r,echo=TRUE}
+setwd('C:/Users/nman2690/Desktop/repdata/')
+A1<-read.csv("activity.csv",sep=",",header=TRUE)
+```
+
+###What is mean total number of steps taken per day?
+
+```{r, echo=TRUE}
+TotStep<-aggregate(steps~date,data=A1,sum,na.rm=T)
+
+hist(TotStep[,2], xlab="Total steps",ylab="Days",main="The total number of steps taken each day", breaks=25)
+barplot(TotStep[,2], ylab="Total steps",xlab="Days",main="The total number of steps taken each day")
+
+TotStep_mean <- mean(TotStep[,2], na.rm=T)
+TotStep_median <- median(TotStep[,2], na.rm=T)
+
+cat("Mean of the total number of steps taken per day:",TotStep_mean)
+
+cat("Median of the total number of steps taken per day:",TotStep_median)
+```
+###What is the average daily activity pattern?
+
+```{r,echo=TRUE}
+TotStep_daily<-aggregate(steps~interval,data=A1,mean,na.rm=T)
+plot(TotStep_daily[,2], type="l", xlab="5-minute interval", ylab="Averaged across all days",  main="Average daily activity")
+MaxTotStep_daily <- TotStep_daily$interval[which.max(TotStep_daily$steps)]
+
+cat("5-minute interval, on average across all the days in the dataset, contains the maximum number of steps:",MaxTotStep_daily)
+
+```
+
+###Imputing missing values
+```{r,echo=TRUE}
+cat("the total number of missing values in the dataset:",sum(is.na(A1$steps)))
+
+#Combine data
+A2 <-merge(A1,TotStep_daily,by.x="interval",by.y="interval",all.x=T)
+A2$steps.x[is.na(A2$steps.x)]=A2$steps.y[is.na(A2$steps.x)]
+
+TotStep2<-aggregate(steps.x~date,data=A2,sum,na.rm=T)
+hist(TotStep2[,2], xlab="Total steps",ylab="Days",main="The total number of steps taken each day", breaks=25)
+A2_mean <- mean(TotStep[,2], na.rm=T)
+A2_median <- median(TotStep[,2], na.rm=T)
+cat("Mean of the total number of steps taken per day:",A2_mean)
+cat("Median of the total number of steps taken per day:",A2_median)
+```
+###Are there differences in activity patterns between weekdays and weekends?
+
+```{r,echo=TRUE}
+A2$day=weekdays(as.Date(A2$date))
+A2$wend <- with(A2,ifelse(A2$day %in% c("Saturday","Sunday"),"Weekend","Weekday"))
+
+TotStep_Weekday<-aggregate(steps.x~interval,data=subset(A2,A2$wend=="Weekday"),mean,na.rm=T)
+
+TotStep_Weekend<-aggregate(steps.x~interval,data=subset(A2,A2$wend=="Weekend"),mean,na.rm=T)
+
+plot(TotStep_Weekday[,2], type="l", xlab="5-minute interval", ylab="Averaged across all days",  main="Average weekday activity")
+plot(TotStep_Weekend[,2], type="l", xlab="5-minute interval", ylab="Averaged across all days",  main="Average weekend activity")
+
+```
+
+```{r,echo=TRUE}
+TotStep_Weekday<-aggregate(steps.x~wend,data=subset(A2,A2$wend=="Weekday"),mean,na.rm=T)
+TotStep_Weekend<-aggregate(steps.x~wend,data=subset(A2,A2$wend=="Weekend"),mean,na.rm=T)
+
+cat("Mean of the total number of steps taken weekday:",TotStep_Weekday[,2])
+cat("Median of the total number of steps taken Weekend:",TotStep_Weekend[,2])
+```
+seems more steps are taken in weekends
